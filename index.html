@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Finanse App</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
+</head>
+<body class="container py-5">
+
+  <h1 class="mb-4">Aplikacja do zarządzania finansami</h1>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h2>Logowanie</h2>
+      <form id="loginForm">
+        <div class="mb-3">
+          <input type="email" class="form-control" placeholder="Email" id="loginEmail" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" class="form-control" placeholder="Hasło" id="loginPassword" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Zaloguj</button>
+      </form>
+    </div>
+
+    <div class="col-md-6">
+      <h2>Rejestracja</h2>
+      <form id="registerForm">
+        <div class="mb-3">
+          <input type="email" class="form-control" placeholder="Email" id="regEmail" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" class="form-control" placeholder="Hasło" id="regPassword" required />
+        </div>
+        <button type="submit" class="btn btn-success">Zarejestruj</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
