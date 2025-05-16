@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Rejestracja - Finanse</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-4">
+      <div class="card shadow-lg">
+        <div class="card-body">
+          <h3 class="card-title text-center mb-4">Zarejestruj się</h3>
+          <form id="registerForm">
+            <div class="mb-3">
+              <label for="username" class="form-label">Nazwa użytkownika</label>
+              <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Hasło</label>
+              <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Zarejestruj</button>
+          </form>
+          <div class="text-center mt-3">
+            <a href="index.html">Masz już konto? Zaloguj się</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  const response = await fetch('http://localhost:3000/user/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await response.json();
+
+  if (response.ok) {
+    localStorage.setItem('userId', data.userId);
+    alert('Rejestracja zakończona sukcesem!');
+    window.location.href = 'dashboard.html';
+  } else {
+    alert(data.message || 'Błąd rejestracji');
+  }
+});
+</script>
+</body>
+</html>

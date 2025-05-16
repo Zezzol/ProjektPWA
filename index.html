@@ -1,44 +1,62 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Finanse App</title>
-  <link rel="stylesheet" href="css/bootstrap.min.css" />
-  
+  <meta charset="UTF-8">
+  <title>Logowanie - Finanse</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
 </head>
-<body class="container py-5">
+<body class="bg-light">
 
-  <h1 class="mb-4">Aplikacja do zarządzania finansami</h1>
-
-  <div class="row">
-    <div class="col-md-6">
-      <h2>Logowanie</h2>
-      <form id="loginForm">
-        <div class="mb-3">
-          <input type="email" class="form-control" placeholder="Email" id="loginEmail" required />
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-4">
+      <div class="card shadow-lg">
+        <div class="card-body">
+          <h3 class="card-title text-center mb-4">Zaloguj się</h3>
+          <form id="loginForm">
+            <div class="mb-3">
+              <label for="username" class="form-label">Nazwa użytkownika</label>
+              <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Hasło</label>
+              <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Zaloguj</button>
+          </form>
+          <div class="text-center mt-3">
+            <a href="register.html">Nie masz konta? Zarejestruj się</a>
+          </div>
         </div>
-        <div class="mb-3">
-          <input type="password" class="form-control" placeholder="Hasło" id="loginPassword" required />
-        </div>
-        <button type="submit" class="btn btn-primary">Zaloguj</button>
-      </form>
-    </div>
-
-    <div class="col-md-6">
-      <h2>Rejestracja</h2>
-      <form id="registerForm">
-        <div class="mb-3">
-          <input type="email" class="form-control" placeholder="Email" id="regEmail" required />
-        </div>
-        <div class="mb-3">
-          <input type="password" class="form-control" placeholder="Hasło" id="regPassword" required />
-        </div>
-        <button type="submit" class="btn btn-success">Zarejestruj</button>
-      </form>
+      </div>
     </div>
   </div>
+</div>
 
-  <script src="js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="js/script.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  const response = await fetch('http://localhost:3000/users/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await response.json();
+
+  if (response.ok) {
+    localStorage.setItem('userId', data.userId);
+    alert('Zalogowano pomyślnie');
+    window.location.href = 'dashboard.html';
+  } else {
+    alert(data.message || 'Błąd logowania');
+  }
+});
+</script>
 </body>
 </html>
