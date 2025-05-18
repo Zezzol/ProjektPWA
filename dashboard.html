@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <title>Panel użytkownika</title>
   <link rel="stylesheet" href="css/bootstrap.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   
 </head>
 <body class="container-fluid">
@@ -17,6 +19,12 @@
         </li>
         <li class="nav-item">
           <a href="#" class="nav-link" onclick="showSection('categories')">📂 Kategorie</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link" onclick="showSection('report')">📄 Raport</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link" onclick="showSection('charts')">📈 Wykresy</a>
         </li>
       </ul>
     </div>
@@ -59,6 +67,37 @@
         </form>
         <h3>Aktualne kategorie</h3>
         <ul id="categoryList" class="list-group"></ul>
+      </section>
+
+      <!-- Raport i analiza -->
+      <section id="reportSection" style="display: none;">
+        <h3>Raport finansowy </h3>
+        <table id="reportTable" class="table">
+          <thead>
+            <tr>
+              <th>Kategoria</th>
+              <th>Kwota</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="reportSummary" class="mt-3 fw-bold"></div>
+        <div id="financialAnalysis" class="mt-4 p-3 border rounded bg-light"></div>
+        <div id="categoryBreakdown" class="mt-4"></div>
+      </section>
+
+      <!-- Wykresy -->
+      <section id="chartsSection" style="display: none;">
+        <h3>Wykres sumy wydatków według kategorii: </h3>
+        <div  class="mt-4" style="width: 100%; max-width: 600px;">
+          <canvas id="categoryChart"></canvas>
+        </div>
+        <br>
+        <h3>Wykres średnich wydatków według kategorii: </h3>
+        <div class="mt-4" style="width: 100%; max-width: 600px;">
+          <canvas id="avgExpenseBarChart"></canvas>
+        </div>
+
       </section>
     </div>
   </div>
