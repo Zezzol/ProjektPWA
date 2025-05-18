@@ -22,7 +22,7 @@ document.getElementById('transactionForm')?.addEventListener('submit', async (e)
 
   if (navigator.onLine) {
     // Online – wyślij do backendu
-    await fetch('http://localhost:3000/transactions', {
+    await fetch('http://localhost:3000/transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(transaction),
@@ -41,7 +41,7 @@ window.addEventListener('online', async () => {
   const transactions = await getPendingTransactions();
 
   for (const tx of transactions) {
-    await fetch('http://localhost:3000/transactions', {
+    await fetch('http://localhost:3000/transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(tx),

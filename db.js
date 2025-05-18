@@ -1,5 +1,5 @@
 const DB_NAME = "FinanseDB";
-const STORE_NAME = "transactions";
+const STORE_NAME = "transaction";
 
 // Otwarcie bazy danych
 function openDB() {
