@@ -30,7 +30,12 @@ export async function saveTransactionOffline(data) {
   const db = await openDB();
   const tx = db.transaction(STORE_TRANSACTION, "readwrite");
   tx.objectStore(STORE_TRANSACTION).add(data);
-  return tx.complete;
+
+  return new Promise((resolve, reject) => {
+    const req = tx.objectStore(STORE_TRANSACTION).add(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export async function getPendingTransactions() {
@@ -57,7 +62,12 @@ export async function saveCategoryOffline(data) {
   const db = await openDB();
   const tx = db.transaction(STORE_CATEGORY, "readwrite");
   tx.objectStore(STORE_CATEGORY).add(data);
-  return tx.complete;
+  //return tx.complete;
+  return new Promise((resolve, reject) => {
+    const req = tx.objectStore(STORE_CATEGORY).add(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 export async function getPendingCategories() {
