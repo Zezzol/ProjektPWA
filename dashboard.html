@@ -6,32 +6,65 @@
   <link rel="stylesheet" href="css/bootstrap.min.css" />
   
 </head>
-<body class="container py-5">
-  <h1 class="mb-4">💰 Twój budżet: <span id="budget">0 zł</span></h1>
-  <h2 class="mb-4">📊 Twoje finanse</h2>
+<body class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 bg-light vh-100 p-3">
+      <h4 class="mb-4">📋 Menu</h4>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a href="#" class="nav-link" onclick="showSection('transactions')">💰 Transakcje</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link" onclick="showSection('categories')">📂 Kategorie</a>
+        </li>
+      </ul>
+    </div>
 
-  <form id="transactionForm" class="row g-3 mb-4">
-    <div class="col-md-3">
-      <input type="number" id="amount" class="form-control" placeholder="Kwota" required />
-    </div>
-    <div class="col-md-3">
-      <input type="text" id="category" class="form-control" placeholder="Kategoria" required />
-    </div>
-    <div class="col-md-3">
-      <select id="type" class="form-select">
-        <option value="income">Przychód</option>
-        <option value="expense">Wydatek</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <button type="submit" class="btn btn-primary w-100">Dodaj</button>
-    </div>
-  </form>
+    <!-- Main content -->
+    <div class="col-md-9 p-4">
+      <h1 class="mb-4">📊 Twoje finanse</h1>
+      
 
-  <h2>📋 Historia</h2>
-  <ul id="transactionList" class="list-group"></ul>
+      <!-- Transakcje -->
+      <section id="transactionsSection">
+        <h3>💰 Twój budżet: <span id="budget">0.00 zł</span></h3>
+        <form id="transactionForm" class="row g-3 my-4">
+          <div class="col-md-3">
+            <input type="number" id="amount" class="form-control" placeholder="Kwota" required />
+          </div>
+          <div class="col-md-3">
+            <select id="category" class="form-select"></select>
+          </div>
+          <div class="col-md-3">
+            <select id="type" class="form-select">
+              <option value="income">Przychód</option>
+              <option value="expense">Wydatek</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Dodaj</button>
+          </div>
+        </form>
+        <h2>📋 Historia</h2>
+        <ul id="transactionList" class="list-group"></ul>
+      </section>
+
+      <!-- Kategorie -->
+      <section id="categoriesSection" style="display: none;">
+        <h3>Dodaj kategorie </h3>
+        <form id="categoryForm" class="d-flex gap-2 my-4">
+          <input type="text" id="newCategory" class="form-control" placeholder="Nowa kategoria" required />
+          <button type="submit" class="btn btn-success">Dodaj kategorię</button>
+        </form>
+        <h3>Aktualne kategorie</h3>
+        <ul id="categoryList" class="list-group"></ul>
+      </section>
+    </div>
+  </div>
 
   <script src="js/bootstrap.bundle.min.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>
+
