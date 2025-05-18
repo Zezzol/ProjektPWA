@@ -46,7 +46,8 @@ window.showSection = function(section) {
     categoriesSection.style.display = 'none';
     reportSection.style.display = 'none';
     chartsSection.style.display = 'block';
-    generatePieChart()
+    generatePieChart();
+    generateIncomeChart();
   }
 };
 
@@ -336,6 +337,48 @@ async function generateReport() {
   tableHTML += '</tbody></table>';
   breakdownDiv.innerHTML = tableHTML;
 
+  const breakdownDiv2 = document.getElementById('categoryBreakdown2');
+
+  // Grupowanie wydatków po kategoriach
+  const incomeGrouped = {};
+  transactions.forEach(tx => {
+    if (tx.type === 'income') {
+      if (!incomeGrouped[tx.category]) {
+        incomeGrouped[tx.category] = [];
+      }
+      incomeGrouped[tx.category].push(tx.amount);
+    }
+  });
+
+  // Generowanie HTML tabeli
+  let tableHTML2 = `
+    <h5>Analiza przychodów według kategorii</h5>
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>Kategoria</th>
+          <th>Średni przychód (zł)</th>
+          <th>Suma przychodów (zł)</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  Object.entries(incomeGrouped).forEach(([category, amounts]) => {
+    const sum = amounts.reduce((a, b) => a + b, 0);
+    const avg = sum / amounts.length;
+    tableHTML2 += `
+      <tr>
+        <td>${category}</td>
+        <td>${avg.toFixed(2)}</td>
+        <td>${sum.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML2 += '</tbody></table>';
+  breakdownDiv2.innerHTML = tableHTML2;
+
 }
 
 // Generowanie wykresu kołowego
@@ -374,7 +417,7 @@ async function generatePieChart() {
   );
 
   // Usuwanie poprzedniego wykresu, jeśli istnieje
-  if (window.expensePieChart) {
+  if (window.expensePieChart instanceof Chart) {
     window.expensePieChart.destroy();
   }
 
@@ -431,7 +474,7 @@ async function generatePieChart() {
   });
 
   // Jeśli wykres już istnieje, zniszcz go (aby uniknąć duplikacji)
-  if (window.avgExpenseChart) {
+  if (window.avgExpenseChart instanceof Chart) {
     window.avgExpenseChart.destroy();
   }
 
@@ -479,6 +522,149 @@ async function generatePieChart() {
   });
 
 }
+
+// Generowanie wykresu dla income
+async function generateIncomeChart() {
+  if (!userId) return;
+
+  let transactions = [];
+  if (navigator.onLine) {
+    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
+    transactions = await res.json();
+  } else {
+    transactions = await getPendingTransactions();
+  }
+
+  // Wykres kołowy – tylko wydatki
+  const ctx = document.getElementById('incomePieChart').getContext('2d');
+
+  // Grupowanie tylko wydatków (type === 'expense')
+  const incomeCategories = {};
+  transactions.forEach(tx => {
+    if (tx.type === 'income') {
+      if (!incomeCategories[tx.category]) {
+        incomeCategories[tx.category] = 0;
+      }
+      incomeCategories[tx.category] += tx.amount;
+    }
+  });
+
+  // Dane do wykresu
+  const labels = Object.keys(incomeCategories);
+  const data = Object.values(incomeCategories);
+
+  // Generowanie kolorów
+  const backgroundColors = labels.map((_, i) =>
+    `hsl(${(i * 360) / labels.length}, 70%, 60%)`
+  );
+
+  // Usuwanie poprzedniego wykresu, jeśli istnieje
+  if (window.incomePieChart instanceof Chart) {
+    window.incomePieChart.destroy();
+  }
+
+  // Tworzenie wykresu kołowego
+  window.incomePieChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Przychody wg kategorii',
+        data: data,
+        backgroundColor: backgroundColors,
+        borderColor: '#fff',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.parsed;
+              return `${context.label}: ${value.toFixed(2)} zł`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Przygotowanie danych do wykresu słupkowego
+  const avgIncomeLabels = [];
+  const avgIncomeData = [];
+
+  // Grupowanie wydatków po kategoriach
+  const incomeGrouped = {};
+  transactions.forEach(tx => {
+    if (tx.type === 'income') {
+      if (!incomeGrouped[tx.category]) {
+        incomeGrouped[tx.category] = [];
+      }
+      incomeGrouped[tx.category].push(tx.amount);
+    }
+  });
+
+  Object.entries(incomeGrouped).forEach(([category, amounts]) => {
+    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+    avgIncomeLabels.push(category);
+    avgIncomeData.push(avg.toFixed(2));
+  });
+
+  // Jeśli wykres już istnieje, zniszcz go (aby uniknąć duplikacji)
+  if (window.avgIncomeChart instanceof Chart) {
+    window.avgIncomeChart.destroy();
+  }
+
+  // Tworzenie wykresu słupkowego
+  const ctxBar = document.getElementById('incomeBarChart').getContext('2d');
+  window.avgIncomeChart = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: avgIncomeLabels,
+      datasets: [{
+        label: 'Średni przychód (zł)',
+        data: avgIncomeData,
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Kwota (zł)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Kategorie'
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: context => `${context.dataset.label}: ${context.parsed.y} zł`
+          }
+        }
+      }
+    }
+  });
+
+}
+
 
 
 // Inicjalizacja po załadowaniu strony

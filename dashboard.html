@@ -84,20 +84,23 @@
         <div id="reportSummary" class="mt-3 fw-bold"></div>
         <div id="financialAnalysis" class="mt-4 p-3 border rounded bg-light"></div>
         <div id="categoryBreakdown" class="mt-4"></div>
+        <div id="categoryBreakdown2" class="mt-4"></div>
+
       </section>
 
       <!-- Wykresy -->
-      <section id="chartsSection" style="display: none;">
-        <h3>Wykres sumy wydatków według kategorii: </h3>
-        <div  class="mt-4" style="width: 100%; max-width: 600px;">
-          <canvas id="categoryChart"></canvas>
-        </div>
-        <br>
-        <h3>Wykres średnich wydatków według kategorii: </h3>
-        <div class="mt-4" style="width: 100%; max-width: 600px;">
-          <canvas id="avgExpenseBarChart"></canvas>
-        </div>
+     <section id="chartsSection" style="display: none;">
+        <h3>Wykres wydatków</h3>
+        <canvas id="categoryChart" width="400" height="400"></canvas>
 
+        <h3>Średni wydatek</h3>
+        <canvas id="avgExpenseBarChart" width="400" height="400"></canvas>
+
+        <h3>Wykres przychodów</h3>
+        <canvas id="incomePieChart" width="400" height="400"></canvas>
+
+        <h3>Średni przychód</h3>
+        <canvas id="incomeBarChart" width="400" height="400"></canvas>
       </section>
     </div>
   </div>
