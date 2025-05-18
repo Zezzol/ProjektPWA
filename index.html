@@ -41,7 +41,11 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
+<<<<<<< HEAD
   const response = await fetch('http://localhost:3000/users/login', {
+=======
+  const response = await fetch('http://localhost:3000/user/login', {
+>>>>>>> a572347efc0f61e6e1176b3ae496728748f781f3
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })

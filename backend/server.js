@@ -17,7 +17,9 @@ app.use(express.json());
 // Dodaj swoje trasy np. users, transactions
 const userRoutes = require('./routes/user');
 const transactionRoutes = require('./routes/transaction');
+const categoryRoutes = require('./routes/category');
 
+app.use('/category', categoryRoutes);
 app.use('/user', userRoutes);
 app.use('/transaction', transactionRoutes);
 
