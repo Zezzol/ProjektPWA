@@ -1,11 +1,4 @@
-import {
-  saveTransactionOffline,
-  getPendingTransactions,
-  clearTransactions,
-  saveCategoryOffline,
-  getPendingCategories,
-  clearCategories
-} from './db.js';
+import { addItem, getItemsByUser, TRANSACTIONS_STORE, CATEGORIES_STORE } from './db.js';
 
 const userId = localStorage.getItem('userId');
 
@@ -51,145 +44,28 @@ window.showSection = function(section) {
   }
 };
 
-// Dodawanie transakcji
-transactionForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
+let categories = [];
+let transactions = [];
 
-  const amount = +document.getElementById('amount').value;
-  const category = categorySelect.value;
-  const type = document.getElementById('type').value;
-
-  const transaction = { amount, category, type, date: new Date().toISOString(), userId };
-
-  if (navigator.onLine) {
-  try {
-    await fetch('http://localhost:3000/transaction', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(transaction),
-    });
-  } catch (error) {
-    console.error('Błąd połączenia. Transakcja zapisana offline!', error);
-    await saveTransactionOffline(transaction);
-    alert('Transakcja zapisana offline!');
-  }
-} else {
-  await saveTransactionOffline(transaction);
-  alert('Transakcja zapisana offline!');
-}
-
-  transactionForm.reset();
-  await loadTransactions();
-});
-
-// Dodawanie kategorii
-categoryForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const name = document.getElementById('newCategory').value.trim();
-  if (!name) return;
-
-  const category = { name, userId };
-
-  if (navigator.onLine) {
-  try {
-    await fetch('http://localhost:3000/category', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(category),
-    });
-  } catch (error) {
-    console.error('Błąd połączenia. Kategoria zostanie zapisana offline.', error);
-    await saveCategoryOffline(category);
-    alert('Kategoria zapisana offline!');
-  }
-} else {
-  await saveCategoryOffline(category);
-  alert('Kategoria zapisana offline!');
-}
-
-  categoryForm.reset();
-  await loadCategories();
-});
-
-// Synchronizacja offline danych po powrocie online
-window.addEventListener('online', async () => {
-  // Transakcje
-  const pendingTransactions = await getPendingTransactions();
-  for (const tx of pendingTransactions) {
-    await fetch('http://localhost:3000/transaction', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tx),
-    });
-  }
-  if (pendingTransactions.length > 0) {
-    alert(`Zsynchronizowano ${pendingTransactions.length} transakcji.`);
-    await clearTransactions();
-    await loadTransactions();
-  }
-
-  // Kategorie
-  const pendingCategories = await getPendingCategories();
-  for (const cat of pendingCategories) {
-    await fetch('http://localhost:3000/category', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cat),
-    });
-  }
-  if (pendingCategories.length > 0) {
-    alert(`Zsynchronizowano ${pendingCategories.length} kategorii.`);
-    await clearCategories();
-    await loadCategories();
-  }
-});
-
-// Ładowanie kategorii (do sidebar i selecta)
-async function loadCategories() {
-  let categories = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/category/${userId}`);
-    categories = await res.json();
-  } else {
-    categories = await getPendingCategories();
-  }
-
-  // Lista kategorii w sidebarze
-  categoryList.innerHTML = '';
-  categories.forEach(cat => {
-    const li = document.createElement('li');
-    li.className = 'list-group-item';
-    li.textContent = cat.name;
-    categoryList.appendChild(li);
-  });
-
-  // Select w formularzu transakcji
+// Render categories in select and list
+function renderCategories() {
   categorySelect.innerHTML = '';
+  categoryList.innerHTML = '';
   categories.forEach(cat => {
     const option = document.createElement('option');
     option.value = cat.name;
     option.textContent = cat.name;
     categorySelect.appendChild(option);
+
+    const li = document.createElement('li');
+    li.textContent = cat.name;
+    li.className = 'list-group-item';
+    categoryList.appendChild(li);
   });
 }
 
-// Ładowanie transakcji i aktualizacja budżetu
-async function loadTransactions() {
-  if (!userId) return;
-  let transactions = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
-  }
-  renderTransactions(transactions);
-  updateBudget(transactions);
-}
-
-// Renderowanie listy transakcji
-function renderTransactions(transactions) {
+// Render transactions list
+function renderTransactions() {
   transactionList.innerHTML = '';
   transactions.forEach(tx => {
     const li = document.createElement('li');
@@ -204,480 +80,132 @@ function renderTransactions(transactions) {
   });
 }
 
-// Aktualizacja budżetu
-function updateBudget(transactions) {
-  const balance = transactions.reduce((sum, tx) => {
-    return tx.type === 'income' ? sum + tx.amount : sum - tx.amount;
-  }, 0);
-  budgetDisplay.textContent = `${balance.toFixed(2)} zł`;
+// Load data from IndexedDB
+async function loadData() {
+  categories = await getItemsByUser(CATEGORIES_STORE, userId);
+  transactions = await getItemsByUser(TRANSACTIONS_STORE, userId);
+  renderCategories();
+  renderTransactions();
 }
 
-// Generowanie raportu
-async function generateReport() {
-  if (!userId) return;
+// Add category
+categoryForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const newCategoryName = document.getElementById('newCategory').value.trim();
+  if (!newCategoryName) return;
 
-  let transactions = [];
+  const categoryObj = { name: newCategoryName, userId };
+  const id = await addItem(CATEGORIES_STORE, categoryObj);
+  categoryObj.id = id;
+  categories.push(categoryObj);
+  renderCategories();
+  categoryForm.reset();
+
   if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
+    await syncAllDataWithServer();
   }
+});
 
-  // Grupowanie transakcji według kategorii
-  const categoryTotals = {};
-  transactions.forEach(tx => {
-    if (!categoryTotals[tx.category]) {
-      categoryTotals[tx.category] = 0;
-    }
-    categoryTotals[tx.category] += tx.type === 'income' ? tx.amount : -tx.amount;
-  });
+// Add transaction
+transactionForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const category = document.getElementById('category').value;
+  const type = document.getElementById('type').value;
 
-  // Renderowanie tabeli
-  const tbody = document.querySelector('#reportTable tbody');
-  tbody.innerHTML = '';
-  let total = 0;
+  if (!amount || !category) return;
 
-  for (const [category, amount] of Object.entries(categoryTotals)) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${category}</td>
-      <td>${amount.toFixed(2)} zł</td>
-    `;
-    tbody.appendChild(row);
-    total += amount;
-  }
+  const transaction = { amount, category, type, date: new Date().toISOString(), userId };
+  const id = await addItem(TRANSACTIONS_STORE, transaction);
+  transaction.id = id;
+  transactions.push(transaction);
+  renderTransactions();
+  transactionForm.reset();
 
-  // Podsumowanie
-  const reportSummary = document.getElementById('reportSummary');
-  reportSummary.textContent = `Suma: ${total.toFixed(2)} zł`;
-  reportSummary.style.color = total >= 0 ? 'green' : 'red';
-
-  const analysisDiv = document.getElementById('financialAnalysis');
-
-  // Obliczenia
-  const totalIncome = transactions
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const totalExpense = transactions
-    .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const balance = totalIncome - totalExpense;
-
-  // Procent oszczędności lub przekroczenia budżetu
-  let savingsText = '';
-  if (totalIncome > 0) {
-    const percent = ((Math.abs(balance) / totalIncome) * 100).toFixed(2);
-    if (balance >= 0) {
-      savingsText = `Zaoszczędzono <strong>${percent}%</strong> budżetu.`;
-    } else {
-      savingsText = `Budżet przekroczony o <strong>${percent}%</strong>.`;
-    }
-  } else {
-    savingsText = 'Brak danych o przychodach do analizy oszczędności.';
-  }
-
-  // Kategorie i średnia wydatków
-  const expenseByCategory = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'expense') {
-      if (!expenseByCategory[tx.category]) {
-        expenseByCategory[tx.category] = 0;
-      }
-      expenseByCategory[tx.category] += tx.amount;
-    }
-  });
-
-  const categoryWithMaxExpense = Object.entries(expenseByCategory)
-    .sort((a, b) => b[1] - a[1])[0];
-
-  const averageExpense = Object.values(expenseByCategory).length
-    ? (Object.values(expenseByCategory).reduce((a, b) => a + b, 0) / Object.values(expenseByCategory).length).toFixed(2)
-    : 0;
-
-  // Wypełnienie HTML
-  analysisDiv.innerHTML = `
-    <h5>Analiza finansowa</h5>
-    <ul>
-      <li>${savingsText}</li>
-      <li>Najwięcej wydajesz w kategorii: <strong>${categoryWithMaxExpense?.[0] || 'brak danych'}</strong> (${categoryWithMaxExpense ? categoryWithMaxExpense[1].toFixed(2) + ' zł' : ''})</li>
-      <li>Średni wydatek na kategorię: <strong>${averageExpense} zł</strong></li>
-    </ul>
-  `;
-
-  const breakdownDiv = document.getElementById('categoryBreakdown');
-
-  // Grupowanie wydatków po kategoriach
-  const expenseGrouped = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'expense') {
-      if (!expenseGrouped[tx.category]) {
-        expenseGrouped[tx.category] = [];
-      }
-      expenseGrouped[tx.category].push(tx.amount);
-    }
-  });
-
-  // Generowanie HTML tabeli
-  let tableHTML = `
-    <h5>Analiza wydatków według kategorii</h5>
-    <table class="table table-bordered table-striped">
-      <thead class="table-light">
-        <tr>
-          <th>Kategoria</th>
-          <th>Średni wydatek (zł)</th>
-          <th>Suma wydatków (zł)</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  Object.entries(expenseGrouped).forEach(([category, amounts]) => {
-    const sum = amounts.reduce((a, b) => a + b, 0);
-    const avg = sum / amounts.length;
-    tableHTML += `
-      <tr>
-        <td>${category}</td>
-        <td>${avg.toFixed(2)}</td>
-        <td>${sum.toFixed(2)}</td>
-      </tr>
-    `;
-  });
-
-  tableHTML += '</tbody></table>';
-  breakdownDiv.innerHTML = tableHTML;
-
-  const breakdownDiv2 = document.getElementById('categoryBreakdown2');
-
-  // Grupowanie wydatków po kategoriach
-  const incomeGrouped = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'income') {
-      if (!incomeGrouped[tx.category]) {
-        incomeGrouped[tx.category] = [];
-      }
-      incomeGrouped[tx.category].push(tx.amount);
-    }
-  });
-
-  // Generowanie HTML tabeli
-  let tableHTML2 = `
-    <h5>Analiza przychodów według kategorii</h5>
-    <table class="table table-bordered table-striped">
-      <thead class="table-light">
-        <tr>
-          <th>Kategoria</th>
-          <th>Średni przychód (zł)</th>
-          <th>Suma przychodów (zł)</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  Object.entries(incomeGrouped).forEach(([category, amounts]) => {
-    const sum = amounts.reduce((a, b) => a + b, 0);
-    const avg = sum / amounts.length;
-    tableHTML2 += `
-      <tr>
-        <td>${category}</td>
-        <td>${avg.toFixed(2)}</td>
-        <td>${sum.toFixed(2)}</td>
-      </tr>
-    `;
-  });
-
-  tableHTML2 += '</tbody></table>';
-  breakdownDiv2.innerHTML = tableHTML2;
-
-}
-
-// Generowanie wykresu kołowego
-async function generatePieChart() {
-  if (!userId) return;
-
-  let transactions = [];
   if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
+    await syncAllDataWithServer();
   }
+});
 
-  // Wykres kołowy – tylko wydatki
-  const ctx = document.getElementById('categoryChart').getContext('2d');
+async function syncAllDataWithServer() {
+  if (!navigator.onLine || !userId) return;
 
-  // Grupowanie tylko wydatków (type === 'expense')
-  const expenseCategories = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'expense') {
-      if (!expenseCategories[tx.category]) {
-        expenseCategories[tx.category] = 0;
+  try {
+    // 1. Pobierz dane z serwera
+    const [serverCategories, serverTransactions] = await Promise.all([
+      fetch(`http://localhost:3000/category/${userId}`).then(res => res.json()),
+      fetch(`http://localhost:3000/transaction/${userId}`).then(res => res.json()),
+    ]);
+
+    // 2. Pobierz dane lokalne
+    const localCategories = await getItemsByUser(CATEGORIES_STORE,userId);
+    const localTransactions = await getItemsByUser(TRANSACTIONS_STORE,userId);
+
+    // 3. Zsynchronizuj brakujące dane z IndexedDB na serwer
+    for (const localCat of categories) {
+      const exists = serverCategories.some(serverCat => serverCat.name === localCat.name);
+      if (!exists) {
+        await fetch('http://localhost:3000/category', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localCat)
+        });
       }
-      expenseCategories[tx.category] += tx.amount;
     }
-  });
 
-  // Dane do wykresu
-  const labels = Object.keys(expenseCategories);
-  const data = Object.values(expenseCategories);
+    for (const localTx of transactions) {
+      const exists = serverTransactions.some(serverTx =>
+        serverTx.amount === localTx.amount &&
+        serverTx.category === localTx.category &&
+        serverTx.type === localTx.type &&
+        new Date(serverTx.date).toISOString() === new Date(localTx.date).toISOString()
+      );
+      if (!exists) {
+        await fetch('http://localhost:3000/transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localTx)
+        });
+      }
+    }
 
-  // Generowanie kolorów
-  const backgroundColors = labels.map((_, i) =>
-    `hsl(${(i * 360) / labels.length}, 70%, 60%)`
-  );
+    // 4. Zsynchronizuj dane z serwera do IndexedDB
+    for (const serverCat of serverCategories) {
+      if (!localCategories.find(lc => lc.name === serverCat.name && lc.userId === serverCat.userId)) {
+        await addItem(CATEGORIES_STORE, serverCat);
+      }
+    }
 
-  // Usuwanie poprzedniego wykresu, jeśli istnieje
-  if (window.expensePieChart instanceof Chart) {
-    window.expensePieChart.destroy();
+    for (const serverTx of serverTransactions) {
+      if (!localTransactions.find(lt =>
+        lt.amount === serverTx.amount &&
+        lt.category === serverTx.category &&
+        lt.type === serverTx.type &&
+        lt.date === serverTx.date &&
+        lt.userId === serverTx.userId
+      )) {
+        await addItem(TRANSACTIONS_STORE, serverTx);
+      }
+    }
+
+    console.log('✅ Synchronizacja zakończona');
+
+    // Zaktualizuj UI
+    loadData();
+
+  } catch (err) {
+    console.error('❌ Błąd synchronizacji:', err);
   }
-
-  // Tworzenie wykresu kołowego
-  window.expensePieChart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Wydatki wg kategorii',
-        data: data,
-        backgroundColor: backgroundColors,
-        borderColor: '#fff',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: false,
-      plugins: {
-        legend: {
-          position: 'bottom'
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const value = context.parsed;
-              return `${context.label}: ${value.toFixed(2)} zł`;
-            }
-          }
-        }
-      }
-    }
-  });
-
-  // Przygotowanie danych do wykresu słupkowego
-  const avgExpenseLabels = [];
-  const avgExpenseData = [];
-
-  // Grupowanie wydatków po kategoriach
-  const expenseGrouped = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'expense') {
-      if (!expenseGrouped[tx.category]) {
-        expenseGrouped[tx.category] = [];
-      }
-      expenseGrouped[tx.category].push(tx.amount);
-    }
-  });
-
-  Object.entries(expenseGrouped).forEach(([category, amounts]) => {
-    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    avgExpenseLabels.push(category);
-    avgExpenseData.push(avg.toFixed(2));
-  });
-
-  // Jeśli wykres już istnieje, zniszcz go (aby uniknąć duplikacji)
-  if (window.avgExpenseChart instanceof Chart) {
-    window.avgExpenseChart.destroy();
-  }
-
-  // Tworzenie wykresu słupkowego
-  const ctxBar = document.getElementById('avgExpenseBarChart').getContext('2d');
-  window.avgExpenseChart = new Chart(ctxBar, {
-    type: 'bar',
-    data: {
-      labels: avgExpenseLabels,
-      datasets: [{
-        label: 'Średni wydatek (zł)',
-        data: avgExpenseData,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Kwota (zł)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Kategorie'
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: context => `${context.dataset.label}: ${context.parsed.y} zł`
-          }
-        }
-      }
-    }
-  });
-
 }
 
-// Generowanie wykresu dla income
-async function generateIncomeChart() {
-  if (!userId) return;
+// Przy starcie
+loadData();
 
-  let transactions = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
-  }
-
-  // Wykres kołowy – tylko wydatki
-  const ctx = document.getElementById('incomePieChart').getContext('2d');
-
-  // Grupowanie tylko wydatków (type === 'expense')
-  const incomeCategories = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'income') {
-      if (!incomeCategories[tx.category]) {
-        incomeCategories[tx.category] = 0;
-      }
-      incomeCategories[tx.category] += tx.amount;
-    }
-  });
-
-  // Dane do wykresu
-  const labels = Object.keys(incomeCategories);
-  const data = Object.values(incomeCategories);
-
-  // Generowanie kolorów
-  const backgroundColors = labels.map((_, i) =>
-    `hsl(${(i * 360) / labels.length}, 70%, 60%)`
-  );
-
-  // Usuwanie poprzedniego wykresu, jeśli istnieje
-  if (window.incomePieChart instanceof Chart) {
-    window.incomePieChart.destroy();
-  }
-
-  // Tworzenie wykresu kołowego
-  window.incomePieChart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Przychody wg kategorii',
-        data: data,
-        backgroundColor: backgroundColors,
-        borderColor: '#fff',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: false,
-      plugins: {
-        legend: {
-          position: 'bottom'
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const value = context.parsed;
-              return `${context.label}: ${value.toFixed(2)} zł`;
-            }
-          }
-        }
-      }
-    }
-  });
-
-  // Przygotowanie danych do wykresu słupkowego
-  const avgIncomeLabels = [];
-  const avgIncomeData = [];
-
-  // Grupowanie wydatków po kategoriach
-  const incomeGrouped = {};
-  transactions.forEach(tx => {
-    if (tx.type === 'income') {
-      if (!incomeGrouped[tx.category]) {
-        incomeGrouped[tx.category] = [];
-      }
-      incomeGrouped[tx.category].push(tx.amount);
-    }
-  });
-
-  Object.entries(incomeGrouped).forEach(([category, amounts]) => {
-    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    avgIncomeLabels.push(category);
-    avgIncomeData.push(avg.toFixed(2));
-  });
-
-  // Jeśli wykres już istnieje, zniszcz go (aby uniknąć duplikacji)
-  if (window.avgIncomeChart instanceof Chart) {
-    window.avgIncomeChart.destroy();
-  }
-
-  // Tworzenie wykresu słupkowego
-  const ctxBar = document.getElementById('incomeBarChart').getContext('2d');
-  window.avgIncomeChart = new Chart(ctxBar, {
-    type: 'bar',
-    data: {
-      labels: avgIncomeLabels,
-      datasets: [{
-        label: 'Średni przychód (zł)',
-        data: avgIncomeData,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Kwota (zł)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Kategorie'
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: context => `${context.dataset.label}: ${context.parsed.y} zł`
-          }
-        }
-      }
-    }
-  });
-
-}
-
-
+// Możesz też nasłuchiwać na zmianę statusu online/offline
+window.addEventListener('online', () => {
+  // Tutaj wywołaj synchronizację wszystkich lokalnych danych, np. wyślij transakcje i kategorie, które jeszcze nie zostały zsynchronizowane
+  console.log('Jesteśmy online - możesz zsynchronizować dane');
+});
 
 // Inicjalizacja po załadowaniu strony
 window.addEventListener('DOMContentLoaded', () => {
@@ -686,7 +214,8 @@ window.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'login.html';
     return;
   }
-  loadCategories();
-  loadTransactions();
-  showSection('transactions'); // domyślnie pokaż transakcje
+  renderCategories();
+  renderTransactions();
+  syncAllDataWithServer();
+  showSection('tansactions'); // domyślnie pokaż transakcje
 });
