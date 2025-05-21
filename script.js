@@ -78,6 +78,7 @@ function renderTransactions() {
     `;
     transactionList.appendChild(li);
   });
+  updateBudget(transactions);
 }
 
 // Load data from IndexedDB
@@ -196,6 +197,14 @@ async function syncAllDataWithServer() {
   } catch (err) {
     console.error('❌ Błąd synchronizacji:', err);
   }
+}
+
+
+function updateBudget(transactions) {
+  const balance = transactions.reduce((sum, tx) => {
+    return tx.type === 'income' ? sum + tx.amount : sum - tx.amount;
+  }, 0);
+  budgetDisplay.textContent = `${balance.toFixed(2)} zł`;
 }
 
 // Przy starcie
