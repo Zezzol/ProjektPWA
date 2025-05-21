@@ -1,12 +1,13 @@
 const CACHE_NAME = 'projekt-pwa-cache-v1';
 const urlsToCache = [
-  '/',
   '/index.html',
   '/dashboard.html',
   '/register.html',
-  '/css/style.css',
-  '/js/script.js',
-  '/js/db.js',
+  '/css/bootstrap.min.css',
+  '/script.js',
+  '/db.js',
+  '/chart.js',
+  '/js/bootstrap.bundle.min.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
