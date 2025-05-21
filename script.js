@@ -62,15 +62,21 @@ transactionForm?.addEventListener('submit', async (e) => {
   const transaction = { amount, category, type, date: new Date().toISOString(), userId };
 
   if (navigator.onLine) {
+  try {
     await fetch('http://localhost:3000/transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(transaction),
     });
-  } else {
+  } catch (error) {
+    console.error('Błąd połączenia. Transakcja zapisana offline!', error);
     await saveTransactionOffline(transaction);
     alert('Transakcja zapisana offline!');
   }
+} else {
+  await saveTransactionOffline(transaction);
+  alert('Transakcja zapisana offline!');
+}
 
   transactionForm.reset();
   await loadTransactions();
@@ -86,15 +92,21 @@ categoryForm?.addEventListener('submit', async (e) => {
   const category = { name, userId };
 
   if (navigator.onLine) {
+  try {
     await fetch('http://localhost:3000/category', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(category),
     });
-  } else {
+  } catch (error) {
+    console.error('Błąd połączenia. Kategoria zostanie zapisana offline.', error);
     await saveCategoryOffline(category);
     alert('Kategoria zapisana offline!');
   }
+} else {
+  await saveCategoryOffline(category);
+  alert('Kategoria zapisana offline!');
+}
 
   categoryForm.reset();
   await loadCategories();

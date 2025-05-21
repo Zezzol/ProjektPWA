@@ -35,6 +35,10 @@ self.addEventListener('activate', event => {
 
 //strategia najpierw sieć, potem cache
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') {
+    return; // Skip caching for non-GET requests
+  }
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -49,3 +53,4 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
