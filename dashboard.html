@@ -26,6 +26,10 @@
         <li class="nav-item">
           <a href="#" class="nav-link" onclick="showSection('charts')">📈 Wykresy</a>
         </li>
+        <li class="nav-item mt-3">
+          <button id="logoutBtn" class="btn btn-outline-danger w-100">Wyloguj</button>
+        </li>
+
       </ul>
     </div>
 
@@ -108,6 +112,18 @@
   <script src="js/bootstrap.bundle.min.js"></script>
   <script type="module" src="script.js"></script>
   <script type="module" src="chartscript.js"></script>
+  <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      localStorage.removeItem('userId');
+      window.location.href = 'index.html';
+    });
+
+    // Zapobiegaj ładowaniu strony dashboard bez zalogowania
+    if (!localStorage.getItem('userId')) {
+      window.location.href = 'index.html';
+    }
+  </script>
+
 </body>
 </html>
 

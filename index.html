@@ -71,5 +71,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   }
 });
 </script>
+<script>
+  // Automatyczne przekierowanie jeśli użytkownik już zalogowany
+  if (localStorage.getItem('userId')) {
+    window.location.href = 'dashboard.html';
+  }
+</script>
+
 </body>
 </html>
