@@ -14,7 +14,6 @@ mongoose.connect('mongodb://127.0.0.1:27017/finanse', {
 
 app.use(express.json());
 
-// Dodaj swoje trasy np. users, transactions
 const userRoutes = require('./routes/user');
 const transactionRoutes = require('./routes/transaction');
 const categoryRoutes = require('./routes/category');

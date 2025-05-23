@@ -50,7 +50,7 @@ window.showSection = function(section) {
 let categories = [];
 let transactions = [];
 
-// Render categories in select and list
+// renderowanie kategorii
 function renderCategories() {
   categorySelect.innerHTML = '';
   categoryList.innerHTML = '';
@@ -67,7 +67,7 @@ function renderCategories() {
   });
 }
 
-// Render transactions list
+// Renderowanie listy transakcji
 function renderTransactions() {
   transactionList.innerHTML = '';
   transactions.forEach(tx => {
@@ -84,7 +84,7 @@ function renderTransactions() {
   updateBudget(transactions);
 }
 
-// Load data from IndexedDB
+// ładowanie danych z indexeddb
 async function loadData() {
   categories = await getItemsByUser(CATEGORIES_STORE, userId);
   transactions = await getItemsByUser(TRANSACTIONS_STORE, userId);
@@ -92,7 +92,7 @@ async function loadData() {
   renderTransactions();
 }
 
-// Add category
+// dodawanie kategorii
 categoryForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const newCategoryName = document.getElementById('newCategory').value.trim();
@@ -110,7 +110,7 @@ categoryForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Add transaction
+// dodawanie transakcji
 transactionForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('amount').value);
@@ -210,7 +210,7 @@ function updateBudget(transactions) {
   
   budgetDisplay.textContent = `${balance.toFixed(2)} zł`;
 
-  // Jeśli wcześniej było >= 0, a teraz jest < 0 → wyślij powiadomienie
+  // Jeśli wcześniej było >= 0, a teraz jest < 0 
   if (previousBalance >= 0 && balance < 0) {
     triggerPushNotification(
       "Uwaga: Budżet na minusie!",
