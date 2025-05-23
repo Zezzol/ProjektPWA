@@ -1,6 +1,7 @@
 import { addItem, getItemsByUser, TRANSACTIONS_STORE, CATEGORIES_STORE } from './db.js';
+import { generateReport, generatePieChart, generateIncomeChart } from './chartscript.js';
 
-const userId = localStorage.getItem('userId');
+export const userId = localStorage.getItem('userId');
 
 const transactionsSection = document.getElementById('transactionsSection');
 const categoriesSection = document.getElementById('categoriesSection');
@@ -15,6 +16,8 @@ const categoryList = document.getElementById('categoryList');
 const categorySelect = document.getElementById('category');
 
 const budgetDisplay = document.getElementById('budget');
+
+let previousBalance = 0;
 
 // Przełączanie sekcji
 window.showSection = function(section) {
@@ -204,16 +207,43 @@ function updateBudget(transactions) {
   const balance = transactions.reduce((sum, tx) => {
     return tx.type === 'income' ? sum + tx.amount : sum - tx.amount;
   }, 0);
+  
   budgetDisplay.textContent = `${balance.toFixed(2)} zł`;
+
+  // Jeśli wcześniej było >= 0, a teraz jest < 0 → wyślij powiadomienie
+  if (previousBalance >= 0 && balance < 0) {
+    triggerPushNotification(
+      "Uwaga: Budżet na minusie!",
+      "Twój budżet spadł poniżej zera. Sprawdź wydatki."
+    );
+  }
+  else if (previousBalance < 0 && balance >= 0){
+    triggerPushNotification(
+      "Dobra Robota!",
+      "Twój budżet znów jest na plusie."
+    )
+  }
+
+  previousBalance = balance;
+}
+
+function triggerPushNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png', 
+        badge: '/icons/favicon.ico'
+      });
+    });
+  }
 }
 
 // Przy starcie
 loadData();
 
-// Możesz też nasłuchiwać na zmianę statusu online/offline
 window.addEventListener('online', () => {
-  // Tutaj wywołaj synchronizację wszystkich lokalnych danych, np. wyślij transakcje i kategorie, które jeszcze nie zostały zsynchronizowane
-  console.log('Jesteśmy online - możesz zsynchronizować dane');
+  syncAllDataWithServer();
 });
 
 // Inicjalizacja po załadowaniu strony
@@ -227,4 +257,12 @@ window.addEventListener('DOMContentLoaded', () => {
   renderTransactions();
   syncAllDataWithServer();
   showSection('tansactions'); // domyślnie pokaż transakcje
+
+  if (Notification.permission !== 'granted') {
+  Notification.requestPermission().then(permission => {
+    if (permission !== 'granted') {
+      console.warn("Powiadomienia są wyłączone.");
+    }
+  });
+  }
 });

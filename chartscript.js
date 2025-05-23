@@ -1,14 +1,26 @@
+import { userId } from './script.js'
+import { getItemsByUser, TRANSACTIONS_STORE } from './db.js';
+
+async function getTransactionsForUser() {
+  if (!userId) return [];
+  if (navigator.onLine) {
+    try {
+      const res = await fetch(`http://localhost:3000/transaction/${userId}`);
+      if (!res.ok) throw new Error('Błąd');
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.warn('Błąd', err);
+    }
+  }
+  return await getItemsByUser(TRANSACTIONS_STORE, userId);
+}
+
 // Generowanie raportu
-async function generateReport() {
+export async function generateReport() {
   if (!userId) return;
 
-  let transactions = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
-  }
+  const transactions = await getTransactionsForUser();
 
   // Grupowanie transakcji według kategorii
   const categoryTotals = {};
@@ -180,16 +192,10 @@ async function generateReport() {
 }
 
 // Generowanie wykresu kołowego
-async function generatePieChart() {
+export async function generatePieChart() {
   if (!userId) return;
 
-  let transactions = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
-  }
+  const transactions = await getTransactionsForUser();
 
   // Wykres kołowy – tylko wydatki
   const ctx = document.getElementById('categoryChart').getContext('2d');
@@ -322,16 +328,10 @@ async function generatePieChart() {
 }
 
 // Generowanie wykresu dla income
-async function generateIncomeChart() {
+export async function generateIncomeChart() {
   if (!userId) return;
 
-  let transactions = [];
-  if (navigator.onLine) {
-    const res = await fetch(`http://localhost:3000/transaction/${userId}`);
-    transactions = await res.json();
-  } else {
-    transactions = await getPendingTransactions();
-  }
+  const transactions = await getTransactionsForUser();
 
   // Wykres kołowy – tylko wydatki
   const ctx = document.getElementById('incomePieChart').getContext('2d');
